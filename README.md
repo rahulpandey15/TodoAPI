@@ -7,7 +7,7 @@ Alongside the source code, I’m also publishing a **https://www.youtube.com/pla
 
 ---
 
-## 🚀 Project Goal
+## Project Goal
 
 The objective of this repository is to demonstrate how to build a modern backend API using:
 
@@ -16,15 +16,13 @@ The objective of this repository is to demonstrate how to build a modern backend
 - SOLID principles
 - Dependency Injection
 - Entity Framework Core
-- Repository & Unit of Work patterns
+- Repository & Patterns
 - Authentication & Authorization (planned)
-- CQRS (planned)
-- Testing (planned)
 - Docker & Deployment (planned)
 
 ---
 
-## 🏗️ Architecture Overview
+## Architecture Overview
 
 This project follows **Clean Architecture**, separating responsibilities into independent layers:
 
