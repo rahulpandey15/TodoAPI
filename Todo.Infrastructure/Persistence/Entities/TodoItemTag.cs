@@ -2,6 +2,7 @@
 {
     public class TodoItemTag
     {
+        public Guid Id { get; set; }
         public Guid TodoItemId { get; set; }
         public TodoItem TodoItem { get; set; }
 
