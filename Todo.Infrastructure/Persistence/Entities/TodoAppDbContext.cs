@@ -14,6 +14,11 @@ namespace Todo.Infrastructure.Persistence.Entities
         {
             base.OnModelCreating(modelBuilder);
 
+
+            modelBuilder.ApplyConfigurationsFromAssembly(typeof(TodoAppDbContext).Assembly);
+
+
+
             modelBuilder.Entity<TodoList>()
                 .HasOne(x => x.User)
                 .WithMany()
