@@ -3,7 +3,7 @@
 A production-ready **Todo API** built with **.NET** following **Clean Architecture** principles.  
 This project is designed as a learning resource and real-world reference for building scalable, maintainable, and testable APIs.
 
-Alongside the source code, I’m also publishing a **https://www.youtube.com/playlist?list=PLWXMCIy8Ap7lnZ1h0Yaqnn2q4k8HExP5a** where I build this project step-by-step from scratch.
+Alongside the source code, I’m also posting video on my Youtube Channel, the playlist link is **https://www.youtube.com/playlist?list=PLWXMCIy8Ap7lnZ1h0Yaqnn2q4k8HExP5a** where I build this project step-by-step from scratch.
 
 ---
 
