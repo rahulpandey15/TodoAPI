@@ -32,3 +32,15 @@ src/
 ├── TodoApi.Application      --> Use Cases / Business Logic
 ├── TodoApi.Domain           --> Core Entities / Rules
 ├── TodoApi.Infrastructure   --> Database / External Services
+```
+
+---
+## How  to Run This Application Locally
+1. Download the source code and navigate to `appsetting.Development.json` file. 
+2. Replace `ConnectionString` with your connection string
+3. Install EFCore Cli Tool https://learn.microsoft.com/en-us/ef/core/cli/dotnet
+4. Run the migration commands to create database locally
+5. The commands are as follows
+   1. `dotnet ef database update --startup-project .\Todo.API\ --project .\Todo.Infrastructure\`
+   2. This should create a database in your local machine 
+6. If you notice any issue in this process, reachout to my discord channel for support. https://discord.gg/Szs9ypCdRj
