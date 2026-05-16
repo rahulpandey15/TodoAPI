@@ -10,8 +10,8 @@ namespace Todo.Infrastructure.Repository
         where TDomain : class
         where TEntity : class
     {
-        private readonly TodoAppDbContext todoAppDbContext;
-        private readonly IMapper mapper;
+        public readonly TodoAppDbContext todoAppDbContext;
+        public readonly IMapper mapper;
 
         public GenericRepository(TodoAppDbContext todoAppDbContext,
             IMapper mapper)

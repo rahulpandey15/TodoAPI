@@ -1,7 +1,5 @@
 ﻿using AutoMapper;
-using System;
-using System.Collections.Generic;
-using System.Text;
+using Microsoft.EntityFrameworkCore;
 using Todo.Domain.DomainEntities;
 using Todo.Domain.RepositoryInterface;
 using Todo.Infrastructure.Persistence.Entities;
@@ -15,6 +13,17 @@ namespace Todo.Infrastructure.Repository
             IMapper mapper) : base(todoAppDbContext, mapper)
         {
 
+        }
+
+        public async Task<UserDomain> GetByEmailAsync(
+            string emailAddress)
+        {
+
+            var user = 
+                await todoAppDbContext.Users.FirstOrDefaultAsync(
+                        x => x.Email == emailAddress);
+
+            return mapper.Map<UserDomain>(user);
         }
     }
 }

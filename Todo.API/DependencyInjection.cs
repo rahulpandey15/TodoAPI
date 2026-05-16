@@ -41,6 +41,8 @@ namespace Todo.API
 
 
             services.AddScoped<IUserService, UserService>();
+            services.AddScoped<ITokenService, TokenService>();
+
 
             return services;
         }
