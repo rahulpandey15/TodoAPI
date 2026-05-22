@@ -14,7 +14,7 @@ namespace Todo.API.Controllers
             var response =
                 await _tokenService.GetTokenAsync(requestDto);
 
-            return Ok();
+            return Ok(response);
         }
 
     }

@@ -13,7 +13,6 @@ namespace Todo.API.Controllers
         [HttpPost]
         public async Task<IActionResult> Post([FromBody] CreateUserDto request)
         {
-
             var response = await userService.CreateUserAsync(request);
             return Created(); // 201
         }
