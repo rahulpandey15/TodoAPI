@@ -37,10 +37,7 @@ namespace Todo.API
         public static IServiceCollection AddApplication(
             this IServiceCollection services)
         {
-            services.AddAutoMapper(
-                typeof(ApplicationLayerMarker).Assembly); // register automapper only at service layer
-
-
+        
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<ITokenService, TokenService>();
             services.AddScoped<ITodoService, TodoService>();

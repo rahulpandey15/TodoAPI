@@ -1,17 +1,21 @@
-﻿using AutoMapper;
-using Todo.Application.DTOs.Request;
+﻿using Todo.Application.DTOs.Request;
 using Todo.Domain.DomainEntities;
 
 namespace Todo.Application.Mappers
 {
-    public class UserMappingExtension : Profile
+    public static class UserMappingExtension
     {
-
-        public UserMappingExtension()
+        extension(CreateUserDto user)
         {
-            CreateMap<CreateUserDto, UserDomain>()
-                .ForMember(dest => dest.PasswordHash, opt =>
-                        opt.MapFrom(src => src.Password));
+            public UserDomain ToUserDomain()
+            {
+                return new UserDomain()
+                {
+                    Email = user.Email,
+                    FullName = user.FullName,
+                    PasswordHash = user.Password
+                };
+            }
         }
     }
 }
