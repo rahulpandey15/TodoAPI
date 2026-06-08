@@ -4,20 +4,48 @@ namespace Todo.Infrastructure.Persistence.Entities
 {
     public class TodoAppDbContext : DbContext
     {
-
-        public TodoAppDbContext(DbContextOptions<TodoAppDbContext> options) : base(options)
+        public TodoAppDbContext(
+            DbContextOptions<TodoAppDbContext> options) : base(options)
         {
-            
+        }
+
+        public override int SaveChanges(bool acceptAllChangesOnSuccess)
+        {
+            ApplyAuditConfig();
+            return base.SaveChanges(acceptAllChangesOnSuccess);        }
+
+        public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = new CancellationToken())
+        {
+            ApplyAuditConfig(); 
+            return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);        }
+
+
+        private void ApplyAuditConfig()
+        {
+            var entries = ChangeTracker
+                .Entries<BaseAuditableEntity>();
+
+            foreach (var entry in entries)
+            {
+                if (entry.State == EntityState.Added)
+                {
+                    entry.Entity.CreatedAt = DateTime.UtcNow;
+                    entry.Entity.CreatedBy = "system";
+                }
+
+                if (entry.State == EntityState.Modified)
+                {
+                    entry.Entity.UpdatedAt = DateTime.UtcNow;
+                    entry.Entity.UpdatedBy = "system";
+                }
+            }
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-
             modelBuilder.ApplyConfigurationsFromAssembly(typeof(TodoAppDbContext).Assembly);
-
-
 
             modelBuilder.Entity<TodoList>()
                 .HasOne(x => x.User)
@@ -57,7 +85,7 @@ namespace Todo.Infrastructure.Persistence.Entities
         }
 
 
-        public DbSet<User> Users { get; set;  }
+        public DbSet<User> Users { get; set; }
         public DbSet<TodoList> TodoLists { get; set; }
         public DbSet<TodoItem> TodoItems { get; set; }
         public DbSet<Tag> Tags { get; set; }

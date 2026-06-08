@@ -1,13 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿namespace Todo.Application.Contracts;
 
-namespace Todo.Application.Contracts
+public interface IPasswordHasher
 {
-    public interface IPasswordHasher
-    {
-        string Hash(string password);
+    string Hash(string password);
 
-        bool VerifyPassword(string password,string passwordHash);   
-    }
+    bool VerifyPassword(string password, string passwordHash);
 }
