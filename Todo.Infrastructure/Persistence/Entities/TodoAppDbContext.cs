@@ -1,23 +1,30 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Todo.Application.Contracts;
 
 namespace Todo.Infrastructure.Persistence.Entities
 {
     public class TodoAppDbContext : DbContext
     {
+        private readonly ICurrentUserService _currentUser;
+
         public TodoAppDbContext(
-            DbContextOptions<TodoAppDbContext> options) : base(options)
+            DbContextOptions<TodoAppDbContext> options,
+            ICurrentUserService currentUser) : base(options)
         {
+            _currentUser = currentUser;
         }
 
         public override int SaveChanges(bool acceptAllChangesOnSuccess)
         {
             ApplyAuditConfig();
-            return base.SaveChanges(acceptAllChangesOnSuccess);        }
+            return base.SaveChanges(acceptAllChangesOnSuccess);      
+        }
 
         public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = new CancellationToken())
         {
             ApplyAuditConfig(); 
-            return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);        }
+            return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);        
+        }
 
 
         private void ApplyAuditConfig()
@@ -30,13 +37,15 @@ namespace Todo.Infrastructure.Persistence.Entities
                 if (entry.State == EntityState.Added)
                 {
                     entry.Entity.CreatedAt = DateTime.UtcNow;
-                    entry.Entity.CreatedBy = "system";
+                    entry.Entity.CreatedBy 
+                        = _currentUser.GetCurrentUserId() ?? "system";
                 }
 
                 if (entry.State == EntityState.Modified)
                 {
                     entry.Entity.UpdatedAt = DateTime.UtcNow;
-                    entry.Entity.UpdatedBy = "system";
+                    entry.Entity.UpdatedBy 
+                        = _currentUser.GetCurrentUserId() ?? "system";
                 }
             }
         }

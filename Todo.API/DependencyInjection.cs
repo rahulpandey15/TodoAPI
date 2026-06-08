@@ -38,6 +38,7 @@ namespace Todo.API
         {
         
             services.AddScoped<IUserService, UserService>();
+            services.AddScoped<ICurrentUserService, CurrentUserService>();
             services.AddScoped<ITokenService, TokenService>();
             services.AddScoped<ITodoService, TodoService>();
             services.AddScoped<IPasswordHasher,PasswordHasher>();
