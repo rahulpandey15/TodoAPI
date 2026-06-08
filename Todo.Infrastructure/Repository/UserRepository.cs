@@ -10,7 +10,7 @@ namespace Todo.Infrastructure.Repository
     {
         public UserRepository(
             TodoAppDbContext todoAppDbContext, 
-            IMapper mapper) : base(todoAppDbContext, mapper)
+            IMapper _mapper) : base(todoAppDbContext, _mapper)
         {
 
         }
@@ -20,10 +20,10 @@ namespace Todo.Infrastructure.Repository
         {
 
             var user = 
-                await todoAppDbContext.Users.FirstOrDefaultAsync(
+                await _todoAppDbContext.Users.FirstOrDefaultAsync(
                         x => x.Email == emailAddress);
 
-            return mapper.Map<UserDomain>(user);
+            return _mapper.Map<UserDomain>(user);
         }
     }
 }

@@ -1,5 +1,4 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using Todo.Application;
 using Todo.Application.Contracts;
 using Todo.Application.Implementation;
 using Todo.Domain.RepositoryInterface;

@@ -1,6 +1,6 @@
-﻿namespace Todo.Infrastructure
+namespace Todo.Infrastructure;
+
+public class InfraAssemblyMarker
 {
-    public class InfraAssemblyMarker
-    {
-    }
+    
 }

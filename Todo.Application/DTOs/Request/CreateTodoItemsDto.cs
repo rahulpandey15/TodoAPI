@@ -1,10 +1,11 @@
-﻿namespace Todo.Application.DTOs.Request;
+﻿using Todo.Domain.Enums;
+
+namespace Todo.Application.DTOs.Request;
 
 public record CreateTodoItemsDto(
     string title,
     string description,
-    string priority,
-    string status,
+    TodoPriority priority,
     DateTime dueDate,
     DateTime remiderDate
     );

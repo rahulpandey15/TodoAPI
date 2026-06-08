@@ -6,7 +6,7 @@ using Todo.Infrastructure.Persistence.Entities;
 namespace Todo.Infrastructure.Repository
 {
     public class TodoRepository :
-        GenericRepository<TodoListDomain, TodoItem>, ITodoRepository
+        GenericRepository<TodoListDomain, TodoList>, ITodoRepository
     {
         public TodoRepository(TodoAppDbContext todoAppDbContext, IMapper mapper) 
             : base(todoAppDbContext, mapper)
