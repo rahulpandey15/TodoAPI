@@ -3,5 +3,4 @@
 public record CreateTodoDto(
     string name,
     string description,
-    Guid userId,
     CreateTodoItemsDto Items);

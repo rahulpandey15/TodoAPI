@@ -13,7 +13,6 @@ public static class TodoMappingExtension
             {
                 Description = todo.description,
                 Name = todo.name,
-                UserId = todo.userId,
                 Items = new TodoItemDomain()
                 {
                     Description =  todo.Items.description,

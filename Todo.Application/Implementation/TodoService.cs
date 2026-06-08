@@ -8,11 +8,14 @@ namespace Todo.Application.Implementation;
 public class TodoService : ITodoService
 {
     private readonly ITodoRepository _todoRepository;
+    private readonly ICurrentUserService _currentUserService;
 
     public TodoService(
-        ITodoRepository todoRepository)
+        ITodoRepository todoRepository,
+        ICurrentUserService currentUserService)
     {
         _todoRepository = todoRepository;
+        _currentUserService = currentUserService;
     }
 
     public async Task<bool> CreateTodoAsync(
@@ -20,6 +23,8 @@ public class TodoService : ITodoService
     {
         var todo
             = todos.ConvertToTodoListDomain();
+
+        todo.UserId = Guid.Parse(_currentUserService.GetCurrentUserId());
 
         await _todoRepository.AddAsync(todo);
 
