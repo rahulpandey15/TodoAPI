@@ -24,6 +24,8 @@ namespace Todo.API
             });
 
 
+            services.AddHealthChecks().AddDbContextCheck<TodoAppDbContext>();
+            
             services.AddAutoMapper(typeof(InfraAssemblyMarker).Assembly); // register automapper only at infra layer
 
 
