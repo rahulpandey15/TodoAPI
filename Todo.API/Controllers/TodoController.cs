@@ -12,16 +12,20 @@ namespace Todo.API.Controllers
     public class TodoController : ControllerBase
     {
         private readonly ITodoService _todoService;
+        private readonly ILogger<TodoController> logger;
 
-        public TodoController(ITodoService todoService)
+        public TodoController(ITodoService todoService, ILogger<TodoController> logger)
         {
             this._todoService = todoService;
+            this.logger = logger;
         }
 
 
         [HttpGet]
         public async Task<IActionResult> Get()
         {
+            logger.LogInformation($"Executing GET method inside a TodoController at {DateTime.Now}");
+
             List<TodoResponseDto> todoList = [];
 
             todoList.Add(new TodoResponseDto(Name: "Start Learning Langchain", IsCompleted: true));
@@ -34,6 +38,9 @@ namespace Todo.API.Controllers
         public async Task<IActionResult> Post(
             [FromBody] CreateTodoDto todo)
         {
+
+            logger.LogInformation("Executing POST method inside a TodoController at {0}", DateTime.Now);
+
             var created = await _todoService.CreateTodoAsync(todo);
             return Created();
         }
