@@ -45,8 +45,12 @@ namespace Todo.API
                     {
                         Timeout = TimeSpan.FromSeconds(10)
                     });
+                    
+                    
+                    // 2. RATE LIMITER - Control request flow
+                    pipeline.AddRateLimiter(new HttpRateLimiterStrategyOptions());
 
-                    // 2. CIRCUIT BREAKER - Prevent cascading failures
+                    // 3. CIRCUIT BREAKER - Prevent cascading failures
                     pipeline.AddCircuitBreaker(new HttpCircuitBreakerStrategyOptions
                     {
                         FailureRatio = 0.5,
@@ -55,8 +59,6 @@ namespace Todo.API
                         BreakDuration = TimeSpan.FromSeconds(10)
                     });
 
-                    // 3. RATE LIMITER - Control request flow
-                    pipeline.AddRateLimiter(new HttpRateLimiterStrategyOptions());
 
                     // 4. RETRY - Recover from transient failures
                     pipeline.AddRetry(new HttpRetryStrategyOptions
