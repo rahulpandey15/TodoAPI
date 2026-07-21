@@ -38,19 +38,40 @@ namespace Todo.API
                 .AddResilienceHandler("retry", (pipeline, context) =>
                 {
                     var loggerFactory = context.ServiceProvider.GetRequiredService<ILoggerFactory>();
-                    var logger = loggerFactory.CreateLogger("EmailRetry");
+                    var logger = loggerFactory.CreateLogger("EmailServiceResilience");
                     
+                    // 1. TIMEOUT - Prevent hanging requests
+                    pipeline.AddTimeout(new HttpTimeoutStrategyOptions
+                    {
+                        Timeout = TimeSpan.FromSeconds(10)
+                    });
+
+                    // 2. CIRCUIT BREAKER - Prevent cascading failures
+                    pipeline.AddCircuitBreaker(new HttpCircuitBreakerStrategyOptions
+                    {
+                        FailureRatio = 0.5,
+                        MinimumThroughput = 3,
+                        SamplingDuration = TimeSpan.FromSeconds(30),
+                        BreakDuration = TimeSpan.FromSeconds(10)
+                    });
+
+                    // 3. RATE LIMITER - Control request flow
+                    pipeline.AddRateLimiter(new HttpRateLimiterStrategyOptions());
+
+                    // 4. RETRY - Recover from transient failures
                     pipeline.AddRetry(new HttpRetryStrategyOptions
                     {
                         MaxRetryAttempts = 3,
                         Delay = TimeSpan.FromSeconds(2),
                         UseJitter = true,
+                        BackoffType = DelayBackoffType.Exponential,
                         OnRetry = args =>
                         {
-                            logger.LogWarning(
-                                "Retry attempt {Attempt}. Delay: {Delay}",
+                            logger.LogError(
+                                "Retry attempt {Attempt}/{MaxAttempts}. Delay: {Delay}ms",
                                 args.AttemptNumber + 1,
-                                args.RetryDelay);
+                                3,
+                                args.RetryDelay.TotalMilliseconds);
 
                             return ValueTask.CompletedTask;
                         }

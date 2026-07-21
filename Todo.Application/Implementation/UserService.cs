@@ -25,9 +25,7 @@ namespace Todo.Application.Implementation
             var response = await userRepository.CommitAsync();
 
             if (response > 0)
-                await emailService.SendMailAsync(
-                    new Message(userDomain.Email,
-                        EmailTemplate(userDomain.FullName)));
+                await emailService.SendMailAsync(userDomain.Email);
 
             return response > 0;
         }

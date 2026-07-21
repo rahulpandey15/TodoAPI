@@ -7,7 +7,7 @@ namespace Todo.Application.Implementation
     public class EmailService(
         IHttpClientFactory clientFactory) : IEmailService
     {
-        public async Task<bool> SendMailAsync(Message message)
+        public async Task<bool> SendMailAsync(string receipient)
         {
             using var httpClient = 
                 clientFactory.CreateClient(
@@ -15,7 +15,7 @@ namespace Todo.Application.Implementation
             
             var response = 
                 await httpClient.PostAsJsonAsync(
-                    "/email/send", message);
+                    "/email/send", receipient);
             
             response.EnsureSuccessStatusCode();
             

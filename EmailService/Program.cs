@@ -14,13 +14,11 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.MapPost("/email/send", (Message mail,ILogger<Program>  logger) =>
+app.MapGet("/email/send", (string  receipient,ILogger<Program>  logger) =>
 {
-    logger.LogInformation("Sending email to {recipient}", mail.receipient);
+    logger.LogInformation("Sending email to {recipient}",receipient);
     return Results.Ok(new { status = "success", message = "Mail has been sent" });
 })
 .WithName("Send");
 
 app.Run();
-
-internal record Message(string receipient, string mailBody);
