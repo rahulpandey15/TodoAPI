@@ -4,6 +4,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Text.Json;
 using Todo.API.Middlewares;
+using Todo.Application.Constants;
 
 namespace Todo.API
 {
@@ -23,11 +24,16 @@ namespace Todo.API
                 options.AddSeq();
             });
 
-
-
             builder.Services.AddHttpContextAccessor();
-
-
+            builder.Services.AddHttpClient(
+                ApplicationConstants.EmailServiceClient, 
+                client =>
+            {
+                client.BaseAddress = new Uri(
+                    builder.Configuration.GetSection(
+                        "EmailService:BaseUrl").Value!);
+            });
+            
             builder.Services.AddHealthChecks();
 
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -47,14 +53,10 @@ namespace Todo.API
 
 
             builder.Services.AddInfrastructure(builder.Configuration);
-
             builder.Services.AddApplication();
-
-
             builder.Services.AddOpenApi();
             builder.Services.AddSwaggerGen();
-
-
+            
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.
@@ -66,8 +68,6 @@ namespace Todo.API
             }
 
             app.UseHttpsRedirection();
-
-
             app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions()
             {
                 ResponseWriter = async (context, report) =>
@@ -98,11 +98,8 @@ namespace Todo.API
 
             app.UseAuthentication();
             app.UseAuthorization();
-
             app.UseMiddleware<UserContextMiddleware>();
-
             app.MapControllers();
-
             app.Run();
         }
     }

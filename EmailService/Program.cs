@@ -14,8 +14,9 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.MapPost("/email/send", (Message mail) =>
+app.MapPost("/email/send", (Message mail,ILogger<Program>  logger) =>
 {
+    logger.LogInformation("Sending email to {recipient}", mail.receipient);
     return Results.Ok(new { status = "success", message = "Mail has been sent" });
 })
 .WithName("Send");
