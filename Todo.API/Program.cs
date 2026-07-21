@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using System.Text.Json;
+using Microsoft.Extensions.Http.Resilience;
+using Polly;
 using Todo.API.Middlewares;
 using Todo.Application.Constants;
 
@@ -26,13 +28,34 @@ namespace Todo.API
 
             builder.Services.AddHttpContextAccessor();
             builder.Services.AddHttpClient(
-                ApplicationConstants.EmailServiceClient, 
-                client =>
-            {
-                client.BaseAddress = new Uri(
-                    builder.Configuration.GetSection(
-                        "EmailService:BaseUrl").Value!);
-            });
+                    ApplicationConstants.EmailServiceClient,
+                    client =>
+                    {
+                        client.BaseAddress = new Uri(
+                            builder.Configuration.GetSection(
+                                "EmailService:BaseUrl").Value!);
+                    })
+                .AddResilienceHandler("retry", (pipeline, context) =>
+                {
+                    var loggerFactory = context.ServiceProvider.GetRequiredService<ILoggerFactory>();
+                    var logger = loggerFactory.CreateLogger("EmailRetry");
+                    
+                    pipeline.AddRetry(new HttpRetryStrategyOptions
+                    {
+                        MaxRetryAttempts = 3,
+                        Delay = TimeSpan.FromSeconds(2),
+                        UseJitter = true,
+                        OnRetry = args =>
+                        {
+                            logger.LogWarning(
+                                "Retry attempt {Attempt}. Delay: {Delay}",
+                                args.AttemptNumber + 1,
+                                args.RetryDelay);
+
+                            return ValueTask.CompletedTask;
+                        }
+                    });
+                });
             
             builder.Services.AddHealthChecks();
 
