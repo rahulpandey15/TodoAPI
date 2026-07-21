@@ -12,10 +12,10 @@ namespace Todo.Application.Implementation
             using var httpClient = 
                 clientFactory.CreateClient(
                     ApplicationConstants.EmailServiceClient);
-            
+
             var response = 
-                await httpClient.PostAsJsonAsync(
-                    "/email/send", receipient);
+                await httpClient.GetAsync(
+                    $"/email/send?recipient={receipient}");
             
             response.EnsureSuccessStatusCode();
             

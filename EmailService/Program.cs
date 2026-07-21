@@ -14,10 +14,15 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-app.MapGet("/email/send", (string  receipient,ILogger<Program>  logger) =>
+app.MapGet("/email/send", (string recipient, ILogger<Program> logger) =>
 {
-    logger.LogInformation("Sending email to {recipient}",receipient);
-    return Results.Ok(new { status = "success", message = "Mail has been sent" });
+    if (string.IsNullOrWhiteSpace(recipient))
+    {
+        return Results.BadRequest(new { status = "error", message = "recipient query parameter is required" });
+    }
+
+    logger.LogInformation("Sending email to {recipient}", recipient);
+    return Results.Ok(new { status = "success", message = $"Mail has been sent to {recipient}" });
 })
 .WithName("Send");
 
