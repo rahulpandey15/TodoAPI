@@ -1,9 +1,13 @@
 
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.Http.Resilience;
 using Microsoft.IdentityModel.Tokens;
+using Polly;
 using System.Text;
 using System.Text.Json;
+using System.Threading.RateLimiting;
 using Todo.API.Middlewares;
+using Todo.Application.Constants;
 
 namespace Todo.API
 {
@@ -26,6 +30,69 @@ namespace Todo.API
 
 
             builder.Services.AddHttpContextAccessor();
+            builder.Services.AddHttpClient(
+                    ApplicationConstants.EmailServiceClient,
+                    client =>
+                    {
+                        client.BaseAddress = new Uri(
+                            builder.Configuration.GetSection(
+                                "EmailService:BaseUrl").Value!);
+                    })
+               .AddResilienceHandler("retry", (pipeline, context) =>
+               {
+                   var loggerFactory = context.ServiceProvider?.GetService<ILoggerFactory>();
+                   var logger = loggerFactory?.CreateLogger("EmailServiceResilience");
+
+                   //1.
+                   pipeline.AddRateLimiter(new HttpRateLimiterStrategyOptions
+                   {
+                       DefaultRateLimiterOptions = new ConcurrencyLimiterOptions
+                       {
+                           PermitLimit = 10,
+                           QueueLimit = 5,
+                           QueueProcessingOrder = QueueProcessingOrder.OldestFirst
+                       },
+                       OnRejected = arg =>
+                       {
+                           logger?.LogWarning("Rate Limiter Request Rejected");
+                           return ValueTask.CompletedTask;
+                       }
+                   });
+
+
+
+                   //2.
+                   pipeline.AddTimeout(new HttpTimeoutStrategyOptions
+                   {
+                       Timeout = TimeSpan.FromSeconds(20),
+                       OnTimeout = arg =>
+                       {
+                           logger.LogError("Timeout Happened");
+                           return ValueTask.CompletedTask;
+
+                       }
+                   });
+
+
+                //2.
+                   pipeline.AddRetry(new HttpRetryStrategyOptions
+                   {
+                       MaxRetryAttempts = 3,
+                       Delay = TimeSpan.FromSeconds(2),
+                       BackoffType = DelayBackoffType.Exponential,
+                       UseJitter=true,
+                       OnRetry = args =>
+                       {
+                           logger?.LogWarning("Retry Attempt {Attempt}, Delay: {Delay}ms. Cause: {Reason}",
+                               args.AttemptNumber + 1,
+                               args.RetryDelay.TotalMilliseconds,
+                               args.Outcome.Exception?.Message);
+
+
+                           return ValueTask.CompletedTask;
+                       }
+                   });
+               });
 
 
             builder.Services.AddHealthChecks();

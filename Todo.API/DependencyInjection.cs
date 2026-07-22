@@ -44,6 +44,8 @@ namespace Todo.API
             services.AddScoped<ITokenService, TokenService>();
             services.AddScoped<ITodoService, TodoService>();
             services.AddScoped<IPasswordHasher,PasswordHasher>();
+            services.AddScoped<IEmailService, EmailService>();
+
 
 
             return services;

@@ -7,7 +7,8 @@ namespace Todo.Application.Implementation
 {
     public class UserService(
               IUserRepository userRepository,
-              IPasswordHasher _passwordHasher) : IUserService
+              IPasswordHasher _passwordHasher,
+              IEmailService emailService) : IUserService
     {
 
         public async Task<bool> CreateUserAsync(CreateUserDto userDto)
@@ -22,6 +23,9 @@ namespace Todo.Application.Implementation
             await userRepository.AddAsync(userDomain);
 
             var response = await userRepository.CommitAsync();
+
+            if (response > 0)
+                await emailService.SendMailAsync(userDomain.Email);
 
             return response > 0;
 
