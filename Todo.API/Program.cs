@@ -43,38 +43,9 @@ namespace Todo.API
                    var loggerFactory = context.ServiceProvider?.GetService<ILoggerFactory>();
                    var logger = loggerFactory?.CreateLogger("EmailServiceResilience");
 
-                   //1.
-                   pipeline.AddRateLimiter(new HttpRateLimiterStrategyOptions
-                   {
-                       DefaultRateLimiterOptions = new ConcurrencyLimiterOptions
-                       {
-                           PermitLimit = 10,
-                           QueueLimit = 5,
-                           QueueProcessingOrder = QueueProcessingOrder.OldestFirst
-                       },
-                       OnRejected = arg =>
-                       {
-                           logger?.LogWarning("Rate Limiter Request Rejected");
-                           return ValueTask.CompletedTask;
-                       }
-                   });
+                  
 
-
-
-                   //2.
-                   pipeline.AddTimeout(new HttpTimeoutStrategyOptions
-                   {
-                       Timeout = TimeSpan.FromSeconds(20),
-                       OnTimeout = arg =>
-                       {
-                           logger.LogError("Timeout Happened");
-                           return ValueTask.CompletedTask;
-
-                       }
-                   });
-
-
-                //2.
+                //1
                    pipeline.AddRetry(new HttpRetryStrategyOptions
                    {
                        MaxRetryAttempts = 3,

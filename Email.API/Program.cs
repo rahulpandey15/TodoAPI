@@ -21,9 +21,6 @@ app.MapGet("/email/send", (string recipient, ILogger<Program> logger) =>
     {
         return Results.BadRequest(new { status = "error", message = "recipient query parameter is required" });
     }
-
-
-    Thread.Sleep(21000);
     logger.LogInformation("Sending email to {recipient}", recipient);
     return Results.Ok(new { status = "success", message = $"Mail has been sent to {recipient}" });
 })
