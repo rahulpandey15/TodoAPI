@@ -4,6 +4,7 @@ namespace Todo.Domain.DomainEntities;
 
 public class TodoItemDomain
 {
+    public Guid Id { get; set; }
     public Guid TodoListId { get; set; }
     public string Title { get; set; } = default!;
     public string Description { get; set; } = default!;
@@ -11,9 +12,9 @@ public class TodoItemDomain
     public TodoStatus Status { get; set; } = TodoStatus.New;
     public DateTime? DueDate { get; set; }
     public DateTime? ReminderDate { get; set; }
-    
+
     public DateTime? CompletedAt { get; set; }
-    
+
     public bool IsDeleted { get; set; }
 
 

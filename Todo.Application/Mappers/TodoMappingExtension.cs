@@ -1,4 +1,5 @@
 using Todo.Application.DTOs.Request;
+using Todo.Application.DTOs.Response;
 using Todo.Domain.DomainEntities;
 
 namespace Todo.Application.Mappers;
@@ -13,15 +14,46 @@ public static class TodoMappingExtension
             {
                 Description = todo.description,
                 Name = todo.name,
-                Items = new TodoItemDomain()
+                TodoItems = todo.Items.Select(x => new TodoItemDomain()
                 {
-                    Description =  todo.Items.description,
-                    Title =  todo.Items.title,  
-                    Priority = todo.Items.priority,
-                    DueDate = todo.Items.dueDate,   
-                    ReminderDate = todo.Items.remiderDate,
-                }
+                    Description = x.description,
+                    Title = x.title,
+                    Priority = x.priority,
+                    DueDate = x.dueDate,
+                    ReminderDate = x.remiderDate,
+                })
+                .ToList()
             };
         }
+    }
+
+    extension(TodoListDomain source)
+    {
+        public TodoResponseDto ToResponseDto() =>
+            new(
+                Name: source.Name,
+                Description: source.Description,
+                Metadata: source.TodoItems
+                    .Select(item => item.ToMetadata())
+                    .ToList()
+            );
+    }
+
+    extension(TodoItemDomain source)
+    {
+        public TodoMetadata ToMetadata() =>
+            new(
+                Title: source.Title,
+                Description: source.Description,
+                Priority: source.Priority.ToString(),
+                Status: source.Status.ToString(),
+                DueDate: source.DueDate
+            );
+    }
+
+    extension(IEnumerable<TodoListDomain> source)
+    {
+        public List<TodoResponseDto> ToResponseDtos() =>
+            source.Select(todo => todo.ToResponseDto()).ToList();
     }
 }

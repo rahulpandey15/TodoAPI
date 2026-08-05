@@ -3,4 +3,4 @@
 public record CreateTodoDto(
     string name,
     string description,
-    CreateTodoItemsDto Items);
+    List<CreateTodoItemsDto> Items);

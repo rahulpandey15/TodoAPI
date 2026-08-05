@@ -25,11 +25,8 @@ namespace Todo.API.Controllers
         public async Task<IActionResult> Get()
         {
             logger.LogInformation($"Executing GET method inside a TodoController at {DateTime.Now}");
-
-            List<TodoResponseDto> todoList = [];
-
-            todoList.Add(new TodoResponseDto(Name: "Start Learning Langchain", IsCompleted: true));
-            todoList.Add(new TodoResponseDto(Name: "Start Learning VectorDb", IsCompleted: true));
+            var todoList = await _todoService.GetItems();
+            logger.LogInformation($"Execution of  GET method inside a TodoController completed at {DateTime.Now}");
             return Ok(todoList);
         }
 
