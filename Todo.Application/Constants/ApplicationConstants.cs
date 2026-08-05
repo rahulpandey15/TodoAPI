@@ -1,6 +1,8 @@
 namespace Todo.Application.Constants;
 
+
 public static class ApplicationConstants
 {
-   public const string EmailServiceClient="EmailServiceClient";      
+    public const string EmailServiceClient = "EmailServiceClient";
+
 }
