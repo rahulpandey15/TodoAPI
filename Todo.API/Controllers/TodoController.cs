@@ -38,9 +38,7 @@ namespace Todo.API.Controllers
         public async Task<IActionResult> Post(
             [FromBody] CreateTodoDto todo)
         {
-
             logger.LogInformation("Executing POST method inside a TodoController at {0}", DateTime.Now);
-
             var created = await _todoService.CreateTodoAsync(todo);
             return Created();
         }
