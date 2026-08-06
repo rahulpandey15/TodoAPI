@@ -3,6 +3,9 @@ using Todo.Application.Contracts;
 using Todo.Application.DTOs.Request;
 using Todo.Application.DTOs.Response;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Caching.Distributed;
+using System.Text.Json;
 
 namespace Todo.API.Controllers
 {
@@ -13,11 +16,14 @@ namespace Todo.API.Controllers
     {
         private readonly ITodoService _todoService;
         private readonly ILogger<TodoController> logger;
+        private readonly IDistributedCache distributedCache;
 
-        public TodoController(ITodoService todoService, ILogger<TodoController> logger)
+        public TodoController(
+            ITodoService todoService, ILogger<TodoController> logger, IDistributedCache distributedCache)
         {
             this._todoService = todoService;
             this.logger = logger;
+            this.distributedCache = distributedCache;
         }
 
 
@@ -25,7 +31,28 @@ namespace Todo.API.Controllers
         public async Task<IActionResult> Get()
         {
             logger.LogInformation($"Executing GET method inside a TodoController at {DateTime.Now}");
+
+            var cache
+                 = await distributedCache.GetStringAsync("todo");
+
+
+            if (cache != null)
+            {
+                return Ok(JsonSerializer.Deserialize<List<TodoResponseDto>>(cache));
+            }
+             
+
+
+
             var todoList = await _todoService.GetItems();
+
+            var options = new DistributedCacheEntryOptions
+            {
+                AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5)
+            };
+
+            await distributedCache.SetStringAsync("todo", JsonSerializer.Serialize(todoList), options);
+
             logger.LogInformation($"Execution of  GET method inside a TodoController completed at {DateTime.Now}");
             return Ok(todoList);
         }
