@@ -8,6 +8,7 @@ using System.Text.Json;
 using System.Threading.RateLimiting;
 using Todo.API.Middlewares;
 using Todo.Application.Constants;
+using Todo.Application.Contracts;
 
 namespace Todo.API
 {
@@ -145,9 +146,10 @@ namespace Todo.API
             builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>
                 {
-                    options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters()
+                    options.TokenValidationParameters = new TokenValidationParameters()
                     {
-                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration.GetSection("Jwt:Secret").Value)),
+                        IssuerSigningKey = new SymmetricSecurityKey(
+                            Encoding.UTF8.GetBytes(builder.Configuration.GetSection("Jwt:Secret").Value)),
                         ValidIssuer = builder.Configuration.GetSection("Jwt:Issuer").Value,
                         ValidAudience = builder.Configuration.GetSection("Jwt:Audience").Value,
                         ValidateAudience = true,
@@ -155,6 +157,31 @@ namespace Todo.API
                         ClockSkew = TimeSpan.Zero
 
                     };
+
+                    options.Events = new JwtBearerEvents
+                    {
+                        OnTokenValidated = async context =>
+                        {
+                            var sidClaim = context.Principal?.FindFirst("sid");
+                            if (sidClaim == null || !Guid.TryParse(sidClaim.Value, out var sessionId))
+                            {
+                                context.Fail("Invalid token: missing session reference");
+                                return;
+                            }
+
+                            var revocationService = context.HttpContext.RequestServices
+                                .GetRequiredService<ITokenRevocationService>();
+
+                            bool isRevoked = await revocationService.IsSessionRevokedAsync(sessionId);
+
+                            if (isRevoked)
+                            {
+                                context.Fail("Session has been revoked");
+                            }
+                        }
+
+                    };
+                    
                 });
 
 

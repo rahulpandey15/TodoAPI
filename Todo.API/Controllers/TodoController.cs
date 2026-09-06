@@ -3,7 +3,6 @@ using Todo.Application.Contracts;
 using Todo.Application.DTOs.Request;
 using Todo.Application.DTOs.Response;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Caching.Distributed;
 using System.Text.Json;
 
@@ -36,13 +35,10 @@ namespace Todo.API.Controllers
                  = await distributedCache.GetStringAsync("todo");
 
 
-            if (cache != null)
+            if (!string.IsNullOrEmpty(cache) && cache != "[]")
             {
                 return Ok(JsonSerializer.Deserialize<List<TodoResponseDto>>(cache));
             }
-             
-
-
 
             var todoList = await _todoService.GetItems();
 
