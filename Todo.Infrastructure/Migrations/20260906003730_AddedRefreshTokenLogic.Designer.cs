@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Todo.Infrastructure.Persistence.Entities;
 
@@ -11,9 +12,11 @@ using Todo.Infrastructure.Persistence.Entities;
 namespace Todo.Infrastructure.Migrations
 {
     [DbContext(typeof(TodoAppDbContext))]
-    partial class TodoAppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260906003730_AddedRefreshTokenLogic")]
+    partial class AddedRefreshTokenLogic
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -122,7 +125,7 @@ namespace Todo.Infrastructure.Migrations
                         .HasMaxLength(45)
                         .HasColumnType("nvarchar(45)");
 
-                    b.Property<string>("Token")
+                    b.Property<string>("TokenHash")
                         .IsRequired()
                         .HasMaxLength(255)
                         .HasColumnType("nvarchar(255)");
@@ -144,7 +147,7 @@ namespace Todo.Infrastructure.Migrations
 
                     b.HasIndex("ReplacedByTokenId");
 
-                    b.HasIndex("Token")
+                    b.HasIndex("TokenHash")
                         .HasDatabaseName("IX_RefreshToken_TokenHash");
 
                     b.HasIndex("UserId")

@@ -17,13 +17,13 @@ namespace Todo.Infrastructure.Persistence.Entities
         public override int SaveChanges(bool acceptAllChangesOnSuccess)
         {
             ApplyAuditConfig();
-            return base.SaveChanges(acceptAllChangesOnSuccess);      
+            return base.SaveChanges(acceptAllChangesOnSuccess);
         }
 
         public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = new CancellationToken())
         {
-            ApplyAuditConfig(); 
-            return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);        
+            ApplyAuditConfig();
+            return base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken);
         }
 
 
@@ -37,14 +37,14 @@ namespace Todo.Infrastructure.Persistence.Entities
                 if (entry.State == EntityState.Added)
                 {
                     entry.Entity.CreatedAt = DateTime.UtcNow;
-                    entry.Entity.CreatedBy 
+                    entry.Entity.CreatedBy
                         = _currentUser.GetCurrentUserId() ?? "system";
                 }
 
                 if (entry.State == EntityState.Modified)
                 {
                     entry.Entity.UpdatedAt = DateTime.UtcNow;
-                    entry.Entity.UpdatedBy 
+                    entry.Entity.UpdatedBy
                         = _currentUser.GetCurrentUserId() ?? "system";
                 }
             }
@@ -101,5 +101,6 @@ namespace Todo.Infrastructure.Persistence.Entities
         public DbSet<TodoItemTag> TodoItemTags { get; set; }
         public DbSet<Comment> Comments { get; set; }
         public DbSet<ActivityLog> ActivityLogs { get; set; }
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
     }
 }

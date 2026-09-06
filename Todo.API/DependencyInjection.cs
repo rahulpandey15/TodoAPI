@@ -31,6 +31,7 @@ namespace Todo.API
 
             services.AddScoped<IUserRepository, UserRepository>();
             services.AddScoped<ITodoRepository, TodoRepository>();
+            services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 
             return services;
         }

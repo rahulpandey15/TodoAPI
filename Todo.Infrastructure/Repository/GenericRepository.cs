@@ -27,6 +27,13 @@ namespace Todo.Infrastructure.Repository
             await _todoAppDbContext.Set<TEntity>().AddAsync(entity);
         }
 
+        public async Task UpdateAsync(TDomain domain)
+        {
+            var entity = _mapper.Map<TEntity>(domain); // domain --> entity
+
+            _todoAppDbContext.Set<TEntity>().Update(entity);
+        }
+
         public async Task<int> CommitAsync()
         {
             return await _todoAppDbContext.SaveChangesAsync();
@@ -44,6 +51,16 @@ namespace Todo.Infrastructure.Repository
             var entity = await _todoAppDbContext.Set<TEntity>().FindAsync(id); // id shd be primary key
 
             return entity == null ? null : _mapper.Map<TDomain>(entity); // enttity---> domain
+        }
+
+        public async Task DetachAsync(object entityId)
+        {
+            var entity = _todoAppDbContext.Set<TEntity>().Find(entityId);
+            if (entity != null)
+            {
+                _todoAppDbContext.Entry(entity).State = EntityState.Detached;
+            }
+            await Task.CompletedTask;
         }
     }
 }
