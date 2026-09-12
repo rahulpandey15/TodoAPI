@@ -55,7 +55,6 @@ namespace Todo.Application.Implementation
 
             // Generate access token
             string accessToken = GenerateAccessToken(userDomain, refreshToken.refreshTokenId);
-            int accessTokenExpiryMinutes = GetAccessTokenExpiryMinutes();
 
             return new TokenResponseDto(
                 accessToken, refreshToken.refreshToken);

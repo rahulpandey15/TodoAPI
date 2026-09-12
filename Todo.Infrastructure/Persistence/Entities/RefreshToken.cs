@@ -1,6 +1,3 @@
-using System.Security.Cryptography;
-using System.Text;
-
 namespace Todo.Infrastructure.Persistence.Entities
 {
     public class RefreshToken : BaseAuditableEntity
