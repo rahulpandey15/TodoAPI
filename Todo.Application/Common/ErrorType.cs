@@ -10,6 +10,7 @@ namespace Todo.Application.Common
         NotFound,
         Conflict,
         Unauthorized,
-        Failure
+        Failure,
+        BadRequest
     }
 }

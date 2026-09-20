@@ -3,6 +3,7 @@ using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
 using System.Security.Claims;
 using System.Text;
+using Todo.Application.Common;
 using Todo.Application.Constants;
 using Todo.Application.Contracts;
 using Todo.Application.DTOs.Request;
@@ -15,87 +16,77 @@ using Todo.Domain.RepositoryInterface;
 namespace Todo.Application.Implementation
 {
    
-    public class TokenService : ITokenService
+    public class TokenService(
+        IUserRepository userRepository,
+        IRefreshTokenRepository refreshTokenRepository,
+        IConfiguration configuration,
+        IPasswordHasher passwordHasher,
+        ITokenRevocationService tokenRevocationService)
+        : ITokenService
     {
-        private readonly IUserRepository _userRepository;
-        private readonly IRefreshTokenRepository _refreshTokenRepository;
-        private readonly IConfiguration _configuration;
-        private readonly IPasswordHasher _passwordHasher;
-        private readonly ITokenRevocationService _tokenRevocationService;
-
-        public TokenService(IUserRepository userRepository,
-            IRefreshTokenRepository refreshTokenRepository,
-            IConfiguration configuration,
-            IPasswordHasher passwordHasher,
-            ITokenRevocationService tokenRevocationService)
-        {
-            _userRepository = userRepository;
-            _refreshTokenRepository = refreshTokenRepository;
-            _configuration = configuration;
-            _passwordHasher = passwordHasher;
-            _tokenRevocationService = tokenRevocationService;
-        }
-
-    
-        public async Task<TokenResponseDto> GetTokenAsync(TokenRequestDto requestDto)
+        public async Task<Result<TokenResponseDto>> GetTokenAsync(TokenRequestDto requestDto)
         {
             var userDomain =
-                await _userRepository.GetByEmailAsync(requestDto.userName);
+                await userRepository.GetByEmailAsync(requestDto.userName);
 
             if (userDomain == null)
-                throw new InvalidEmailException(ErrorConstants.InvalidEmail);
+                return Result.Failure<TokenResponseDto>(
+                    Error.Unauthorized("Auth.InvalidEmail", ErrorConstants.InvalidEmail));
 
-            if (!_passwordHasher.VerifyPassword(requestDto.password, userDomain.PasswordHash))
-                throw new InvalidEmailException(ErrorConstants.InvalidPassword);
-
-
+            if (!passwordHasher.VerifyPassword(requestDto.password, userDomain.PasswordHash))
+                return Result.Failure<TokenResponseDto>(
+                    Error.Unauthorized("Auth.InvalidPassword", ErrorConstants.InvalidPassword));
+            
             // Generate refresh token
-            var refreshToken = await GenerateAndStoreRefreshTokenAsync(userDomain.Id, clientIp: null);
-
+            var refreshToken = 
+                await GenerateAndStoreRefreshTokenAsync(userDomain.Id, clientIp: null);
 
             // Generate access token
             string accessToken = GenerateAccessToken(userDomain, refreshToken.refreshTokenId);
+            int accessTokenExpiryMinutes = GetAccessTokenExpiryMinutes();
 
-            return new TokenResponseDto(
-                accessToken, refreshToken.refreshToken);
+            return Result.Success(new TokenResponseDto(accessToken, refreshToken.refreshToken));
         }
 
-        public async Task<TokenResponseDto> RefreshTokenAsync(
+        public async Task<Result<TokenResponseDto>> RefreshTokenAsync(
             RefreshTokenRequestDto requestDto, string? clientIp = null)
         {
             // Validate input
             if (string.IsNullOrWhiteSpace(requestDto.refreshToken))
-                throw new InvalidTokenException("Refresh token is required.");
+                return Result.Failure<TokenResponseDto>(
+                    Error.Unauthorized("Auth.InvalidRefreshToken", ErrorConstants.InvalidRefreshToken));    
 
             // Get the stored token
             var storedToken = 
-                await _refreshTokenRepository.GetByRefreshTokenAsync(requestDto.refreshToken);
+                await refreshTokenRepository.GetByRefreshTokenAsync(requestDto.refreshToken);
 
             if (storedToken == null)
-            {
-                throw new InvalidTokenException("Invalid refresh token.");
-            }
+                return Result.Failure<TokenResponseDto>(
+                    Error.Unauthorized("Auth.InvalidRefreshToken", ErrorConstants.InvalidRefreshToken));    
 
             // Check if token is expired
             if (storedToken.IsExpired())
-                throw new InvalidTokenException("Refresh token has expired.");
+                return Result.Failure<TokenResponseDto>(
+                    Error.Unauthorized("Auth.InvalidRefreshToken", ErrorConstants.ExpiredRefreshToken));    
 
             // Check if token is revoked
             if (storedToken.IsRevoked())
             {
                 await RevokeAllUserTokensAsync(storedToken.UserId, clientIp);
-
-                // TODO : write a logic to remove all refresh token from redis as well
-
-                throw new InvalidTokenException(
-                    "Refresh token has been revoked. All user tokens have been invalidated for security.");
+                
+                return Result.Failure<TokenResponseDto>(
+                    Error.Unauthorized("Auth.InvalidRefreshToken",
+                        "Refresh token has been revoked. All user tokens have been invalidated for security."));
             }
-
             // Get the user
-            var user = await _userRepository.GetByIdAsync(storedToken.UserId);
+            var user = await userRepository.GetByIdAsync(storedToken.UserId);
 
-            if (user == null)
-                throw new InvalidEmailException("User not found.");
+            if(user == null)
+            {
+                return Result.Failure<TokenResponseDto>(
+                    Error.BadRequest("Invalid User",
+                        "The user associated with the refresh token does not exist."));
+            }
 
             // Generate new refresh token (rotation)
             var newRefreshToken = await GenerateAndStoreRefreshTokenAsync(user.Id, clientIp);
@@ -106,25 +97,27 @@ namespace Todo.Application.Implementation
 
             // Revoke the old refresh token and link it to the new one
             await RevokeOldRefreshTokenAsync(storedToken.Id, newRefreshToken.refreshToken);
-
-            return new TokenResponseDto(newAccessToken, newRefreshToken.refreshToken);
+            
+            return  Result.Success(new TokenResponseDto(newAccessToken, newRefreshToken.refreshToken));
         }
 
        
-        public async Task<bool> RevokeTokenAsync(
-            string refreshToken, string? clientIp = null)
+        public async Task<Result> RevokeTokenAsync(string refreshToken, string? clientIp = null)
         {
             if (string.IsNullOrWhiteSpace(refreshToken))
-                return false;
+                return Result.Failure(
+                    Error.BadRequest("Auth.InvalidRefreshToken", ErrorConstants.InvalidRefreshToken));
 
             // Get the stored token
-            var storedToken = await _refreshTokenRepository.GetByRefreshTokenAsync(refreshToken);
+            var storedToken = await refreshTokenRepository.GetByRefreshTokenAsync(refreshToken);
 
             if (storedToken == null)
-                return false;
+               return Result.Failure(
+                    Error.BadRequest("Auth.InvalidRefreshToken", ErrorConstants.InvalidRefreshToken));
 
             if (storedToken.IsRevoked())
-                return true; // Already revoked
+                return Result.Failure(
+                    Error.BadRequest("Auth.InvalidRefreshToken", ErrorConstants.RevokedRefreshToken));
 
             // Create a domain object to update
             var tokenToRevoke = new RefreshTokenDomain
@@ -142,11 +135,11 @@ namespace Todo.Application.Implementation
                 UpdatedBy = "system"
             };
 
-            await _refreshTokenRepository.UpdateAsync(tokenToRevoke);
-            await _refreshTokenRepository.CommitAsync();
-            await _tokenRevocationService.InvalidateSessionCacheAsync(storedToken.Id);
+            await refreshTokenRepository.UpdateAsync(tokenToRevoke);
+            await refreshTokenRepository.CommitAsync();
+            await tokenRevocationService.InvalidateSessionCacheAsync(storedToken.Id);
 
-            return true;
+            return Result.Success();
         }
 
    
@@ -154,7 +147,7 @@ namespace Todo.Application.Implementation
             Guid userId, 
             string? clientIp = null)
         {
-            int revokedCount = await _refreshTokenRepository.RevokeAllUserTokensAsync(userId, clientIp);
+            int revokedCount = await refreshTokenRepository.RevokeAllUserTokensAsync(userId, clientIp);
             return revokedCount >= 0;
         }
       
@@ -182,8 +175,8 @@ namespace Todo.Application.Implementation
             };
 
             // Add to repository
-            await _refreshTokenRepository.AddAsync(refreshTokenDomain);
-            await _refreshTokenRepository.CommitAsync();
+            await refreshTokenRepository.AddAsync(refreshTokenDomain);
+            await refreshTokenRepository.CommitAsync();
 
          // return thr raw token
             return (rawToken, refreshTokenDomain.Id);
@@ -194,20 +187,20 @@ namespace Todo.Application.Implementation
         {
             // Get the old token to revoke
             var oldToken = 
-                await _refreshTokenRepository.GetByIdWithDetailsAsync(oldTokenId);
+                await refreshTokenRepository.GetByIdWithDetailsAsync(oldTokenId);
 
             if (oldToken == null)
                 return;
 
             // Find the new token by hash to get its ID
             var newToken = 
-                await _refreshTokenRepository.GetByRefreshTokenAsync(newRawToken);
+                await refreshTokenRepository.GetByRefreshTokenAsync(newRawToken);
 
             if (newToken == null)
                 return;
 
             // Detach the old token entity from the context to avoid tracking conflicts
-            await _refreshTokenRepository.DetachAsync(oldToken.Id);
+            await refreshTokenRepository.DetachAsync(oldToken.Id);
 
             // Update the old token to mark it as replaced
             var oldTokenToUpdate = new RefreshTokenDomain
@@ -228,15 +221,15 @@ namespace Todo.Application.Implementation
 
 
             // Detach the old token entity from the context to avoid tracking conflicts
-            await _refreshTokenRepository.DetachAsync(oldToken.Id);
-            await _refreshTokenRepository.UpdateAsync(oldTokenToUpdate);
-            await _refreshTokenRepository.CommitAsync();
+            await refreshTokenRepository.DetachAsync(oldToken.Id);
+            await refreshTokenRepository.UpdateAsync(oldTokenToUpdate);
+            await refreshTokenRepository.CommitAsync();
         }
 
       
         private string GenerateAccessToken(UserDomain userResponse, Guid sessionId)
         {
-            string secretKey = _configuration["Jwt:Secret"]!;
+            string secretKey = configuration["Jwt:Secret"]!;
 
             var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey));
             var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
@@ -254,8 +247,8 @@ namespace Todo.Application.Implementation
                     ]),
                     Expires = DateTime.UtcNow.AddMinutes(expiryMinutes),
                     SigningCredentials = credentials,
-                    Issuer = _configuration["Jwt:Issuer"],
-                    Audience = _configuration["Jwt:Audience"]
+                    Issuer = configuration["Jwt:Issuer"],
+                    Audience = configuration["Jwt:Audience"]
                 };
 
             var tokenHandler = new JsonWebTokenHandler();
@@ -267,12 +260,12 @@ namespace Todo.Application.Implementation
   
         private int GetAccessTokenExpiryMinutes()
         {
-            var configValue = _configuration["Jwt:AccessTokenExpirationMinutes"];
+            var configValue = configuration["Jwt:AccessTokenExpirationMinutes"];
             if (int.TryParse(configValue, out int minutes))
                 return minutes;
 
             // Fallback to old configuration key for backward compatibility
-            configValue = _configuration["Jwt:TokenExpiryInMinutes"];
+            configValue = configuration["Jwt:TokenExpiryInMinutes"];
             if (int.TryParse(configValue, out int legacyMinutes))
                 return legacyMinutes;
 
@@ -282,7 +275,7 @@ namespace Todo.Application.Implementation
     
         private int GetRefreshTokenExpiryDays()
         {
-            var configValue = _configuration["Jwt:RefreshTokenExpirationDays"];
+            var configValue = configuration["Jwt:RefreshTokenExpirationDays"];
             if (int.TryParse(configValue, out int days))
                 return days;
 
