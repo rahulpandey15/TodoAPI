@@ -1,4 +1,5 @@
 ﻿
+using Todo.Application.Common;
 using Todo.Application.DTOs.Request;
 using Todo.Application.DTOs.Response;
 
@@ -6,8 +7,8 @@ namespace Todo.Application.Contracts
 {
     public interface ITodoService
     {
-        Task<bool> CreateTodoAsync(CreateTodoDto todos);
+        Task<Result> CreateTodoAsync(CreateTodoDto todos);
 
-        Task<IEnumerable<TodoResponseDto>> GetItems();
+        Task<Result<List<TodoResponseDto>>> GetItems();
     }
 }

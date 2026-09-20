@@ -1,8 +1,9 @@
-﻿using Todo.Application.Mappers;
+﻿using Todo.Application.Common;
 using Todo.Application.Contracts;
 using Todo.Application.DTOs.Request;
-using Todo.Domain.RepositoryInterface;
 using Todo.Application.DTOs.Response;
+using Todo.Application.Mappers;
+using Todo.Domain.RepositoryInterface;
 
 namespace Todo.Application.Implementation;
 
@@ -19,7 +20,7 @@ public class TodoService : ITodoService
         _currentUserService = currentUserService;
     }
 
-    public async Task<bool> CreateTodoAsync(
+    public async Task<Result> CreateTodoAsync(
         CreateTodoDto todos)
     {
         var todo
@@ -31,14 +32,16 @@ public class TodoService : ITodoService
 
         int rowsInserted = await _todoRepository.CommitAsync();
 
-        return rowsInserted > 0;
+     return rowsInserted > 0
+        ? Result.Success()
+        : Result.Failure(Error.Failure("Todo.CreateFailed", "Could not create the todo item."));
     }
 
-    public async Task<IEnumerable<TodoResponseDto>> GetItems()
+    public async Task<Result<List<TodoResponseDto>>> GetItems()
     {
         var todoItemsDomain
                = await _todoRepository.GetTodosAsync(Guid.Parse(_currentUserService.GetCurrentUserId()));
 
-        return todoItemsDomain.ToResponseDtos();
+        return Result.Success(todoItemsDomain.ToResponseDtos());
     }
 }
