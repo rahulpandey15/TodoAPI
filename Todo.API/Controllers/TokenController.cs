@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Todo.API.Extensions;
 using Todo.Application.Contracts;
 using Todo.Application.DTOs.Request;
 
@@ -6,14 +7,16 @@ namespace Todo.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    public class TokenController(ITokenService _tokenService, IHttpContextAccessor _httpContextAccessor) : ControllerBase
+    public class TokenController(
+        ITokenService tokenService, 
+        IHttpContextAccessor _httpContextAccessor) : ControllerBase
     {
 
         [HttpPost]
         public async Task<IActionResult> Get(TokenRequestDto requestDto)
         {
             var response =
-                await _tokenService.GetTokenAsync(requestDto);
+                await tokenService.GetTokenAsync(requestDto);
 
             return Ok(response);
         }
@@ -23,9 +26,12 @@ namespace Todo.API.Controllers
         public async Task<IActionResult> RefreshToken(RefreshTokenRequestDto requestDto)
         {
             var clientIp = GetClientIpAddress();
-            var response = await _tokenService.RefreshTokenAsync(requestDto, clientIp);
+            var result = await tokenService.RefreshTokenAsync(requestDto, clientIp);
+            
+            if(result.IsSuccess)
+                return Ok(result.Value);
 
-            return Ok(response);
+            return result.ToProblemDetails();
         }
 
       
@@ -33,12 +39,12 @@ namespace Todo.API.Controllers
         public async Task<IActionResult> Revoke(RefreshTokenRequestDto requestDto)
         {
             var clientIp = GetClientIpAddress();
-            var result = await _tokenService.RevokeTokenAsync(requestDto.refreshToken, clientIp);
+            var result = await tokenService.RevokeTokenAsync(requestDto.refreshToken, clientIp);
 
-            if (result)
-                return Ok(new { message = "Token revoked successfully." });
+            if (result.IsSuccess)
+                return Ok("Token revoked");
 
-            return BadRequest(new { message = "Failed to revoke token." });
+            return result.ToProblemDetails();
         }
 
     

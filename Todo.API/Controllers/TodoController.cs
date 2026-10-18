@@ -1,16 +1,16 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Text.Json;
+using Todo.API.Extensions;
+using Microsoft.AspNetCore.Mvc;
 using Todo.Application.Contracts;
 using Todo.Application.DTOs.Request;
 using Todo.Application.DTOs.Response;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.Extensions.Caching.Distributed;
-using System.Text.Json;
 
 namespace Todo.API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
+   // [Authorize]
     public class TodoController : ControllerBase
     {
         private readonly ITodoService _todoService;
@@ -40,17 +40,20 @@ namespace Todo.API.Controllers
                 return Ok(JsonSerializer.Deserialize<List<TodoResponseDto>>(cache));
             }
 
-            var todoList = await _todoService.GetItems();
+            var result = await _todoService.GetItems();
+
+            if (result.IsFailure)
+                return result.ToProblemDetails();
 
             var options = new DistributedCacheEntryOptions
             {
                 AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5)
             };
 
-            await distributedCache.SetStringAsync("todo", JsonSerializer.Serialize(todoList), options);
+            await distributedCache.SetStringAsync("todo", JsonSerializer.Serialize(result.Value), options);
 
             logger.LogInformation($"Execution of  GET method inside a TodoController completed at {DateTime.Now}");
-            return Ok(todoList);
+            return Ok(result.Value);
         }
 
 
@@ -59,8 +62,8 @@ namespace Todo.API.Controllers
             [FromBody] CreateTodoDto todo)
         {
             logger.LogInformation("Executing POST method inside a TodoController at {0}", DateTime.Now);
-            var created = await _todoService.CreateTodoAsync(todo);
-            return Created();
+            var result = await _todoService.CreateTodoAsync(todo);
+            return result.IsSuccess ? Created() : result.ToProblemDetails();
         }
     }
 }

@@ -1,4 +1,5 @@
-﻿using Todo.Application.DTOs.Request;
+﻿using Todo.Application.Common;
+using Todo.Application.DTOs.Request;
 using Todo.Application.DTOs.Response;
 
 namespace Todo.Application.Contracts;
@@ -6,12 +7,12 @@ namespace Todo.Application.Contracts;
 public interface ITokenService
 {
     
-    Task<TokenResponseDto> GetTokenAsync(TokenRequestDto requestDto);
+    Task<Result<TokenResponseDto>> GetTokenAsync(TokenRequestDto requestDto);
 
-    Task<TokenResponseDto> RefreshTokenAsync(
+    Task<Result<TokenResponseDto>> RefreshTokenAsync(
         RefreshTokenRequestDto requestDto, string? clientIp = null);
 
-    Task<bool> RevokeTokenAsync(string refreshToken, string? clientIp = null);
+    Task<Result> RevokeTokenAsync(string refreshToken, string? clientIp = null);
 
     Task<bool> RevokeAllUserTokensAsync(Guid userId, string? clientIp = null);
 }
