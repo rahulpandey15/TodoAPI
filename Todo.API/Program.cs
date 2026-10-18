@@ -1,4 +1,5 @@
 
+using Hangfire;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.Http.Resilience;
 using Microsoft.IdentityModel.Tokens;
@@ -9,6 +10,7 @@ using System.Threading.RateLimiting;
 using Todo.API.Middlewares;
 using Todo.Application.Constants;
 using Todo.Application.Contracts;
+using Todo.Application.Jobs;
 
 namespace Todo.API
 {
@@ -231,9 +233,23 @@ namespace Todo.API
 
             app.UseAuthentication();
             app.UseAuthorization();
+
+            app.UseHangfireDashboard("/hangfire");
+
+
             app.UseMiddleware<UserContextMiddleware>();
             app.MapControllers();
-            app.Run();
+
+
+            using (var scopee = app.Services.CreateScope())
+            {
+                var jobs = scopee.ServiceProvider.GetRequiredService<IBackgroundJobService>();
+
+                jobs.AddOrUpdateRecurring<CleanupPendingTaskJob>("clean-up",
+                    x => x.CleanUpPendingTodos(), Cron.Weekly());
+            }
+
+                app.Run();
         }
     }
 }
